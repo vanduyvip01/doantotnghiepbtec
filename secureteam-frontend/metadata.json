@@ -1,0 +1,5 @@
+{
+  "name": "SecureTeam",
+  "description": "A secure enterprise project management system with adaptive authentication and role-based access control.",
+  "requestFramePermissions": []
+}

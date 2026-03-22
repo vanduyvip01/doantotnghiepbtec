@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SecureTeam Debug API</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 40px auto; }
+        .card { border: 1px solid #ccc; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        button { padding: 10px 20px; background: #4f46e5; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #4338ca; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔐 SecureTeam Debug API Test</h1>
+    
+    <div class="card">
+        <h3>1️⃣ Check Database Users</h3>
+        <button onclick="testDebug()">Check Users in Database</button>
+        <div id="debug-result"></div>
+    </div>
+
+    <div class="card">
+        <h3>2️⃣ Create New Admin User</h3>
+        <input type="email" id="new-email" placeholder="Email" value="testadmin@secureteam.com">
+        <input type="text" id="new-name" placeholder="Name" value="Test Admin">
+        <input type="password" id="new-password" placeholder="Password" value="TestPass@123">
+        <button onclick="createTestUser()">Create User</button>
+        <div id="create-result"></div>
+    </div>
+
+    <div class="card">
+        <h3>3️⃣ Try Login</h3>
+        <input type="email" id="email" placeholder="admin@secureteam.com" value="admin@secureteam.com">
+        <input type="password" id="password" placeholder="SecurePass@123" value="SecurePass@123">
+        <button onclick="testLogin()">Login</button>
+        <div id="login-result"></div>
+    </div>
+
+    <script>
+        async function testDebug() {
+            const res = document.getElementById('debug-result');
+            res.innerHTML = '⏳ Loading...';
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/debug');
+                const data = await response.json();
+                res.innerHTML = `<span class="success">✅ Database Check:</span><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (err) {
+                res.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+            }
+        }
+
+        async function createTestUser() {
+            const res = document.getElementById('create-result');
+            const email = document.getElementById('new-email').value;
+            const name = document.getElementById('new-name').value;
+            const password = document.getElementById('new-password').value;
+            res.innerHTML = '⏳ Creating user...';
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/create-test-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, name, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    res.innerHTML = `<span class="success">✅ User Created! Use these credentials to login:</span><pre>${JSON.stringify(data.testCredentials, null, 2)}</pre>`;
+                    // Update login field with new credentials
+                    document.getElementById('email').value = email;
+                    document.getElementById('password').value = password;
+                } else {
+                    res.innerHTML = `<span class="error">❌ Failed: ${data.message}</span>`;
+                }
+            } catch (err) {
+                res.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+            }
+        }
+
+        async function testLogin() {
+            const res = document.getElementById('login-result');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            res.innerHTML = '⏳ Logging in...';
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    res.innerHTML = `<span class="success">✅ Login Success! 2FA Code: 123456</span><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    res.innerHTML = `<span class="error">❌ Login Failed: ${data.message}</span>`;
+                }
+            } catch (err) {
+                res.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+            }
+        }
+
+        // Auto-test on load
+        window.onload = () => testDebug();
+    </script>
+</body>
+</html>
