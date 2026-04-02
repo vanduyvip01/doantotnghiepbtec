@@ -105,6 +105,39 @@ router.post('/', protect, authorize('ADMIN'), async (req, res) => {
     
     console.log(`✅ Employee created: ${user._id} (${user.email}) with 2FA enabled`);
     
+    // ✅ Add new user to ALL public channels
+    const { Channel } = require('../models');
+    let generalChannel = await Channel.findOne({ name: 'General' });
+    if (!generalChannel) {
+      // Create General channel if it doesn't exist
+      generalChannel = await Channel.create({
+        name: 'General',
+        description: 'Main communication channel for all employees',
+        createdBy: req.user.id,
+        members: [user._id]
+      });
+      console.log(`✅ Created General channel and added ${user.email}`);
+    } else {
+      // Add user to General channel if not already there
+      if (!generalChannel.members.includes(user._id)) {
+        generalChannel.members.push(user._id);
+        await generalChannel.save();
+        console.log(`✅ Added ${user.email} to General channel`);
+      }
+    }
+    
+    // ✅ Auto-add new user to ALL existing public channels
+    const allChannels = await Channel.find({ isPrivate: { $ne: true } });
+    console.log(`📢 Found ${allChannels.length} public channels to add user to`);
+    
+    for (const channel of allChannels) {
+      if (!channel.members.includes(user._id)) {
+        channel.members.push(user._id);
+        await channel.save();
+        console.log(`✅ Added ${user.email} to channel: ${channel.name}`);
+      }
+    }
+    
     // Populate department info before response
     await user.populate('department', 'name');
     

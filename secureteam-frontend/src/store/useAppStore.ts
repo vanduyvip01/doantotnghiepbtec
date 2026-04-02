@@ -274,8 +274,35 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchTaskDetail: async (taskId: string) => {
     try {
       const detail = await api.get<any>(`/tasks/${taskId}`);
-      set({ currentTaskDetail: { ...detail, id: detail.id || detail._id } });
-      return detail;
+      
+      // ✅ Normalize nested IDs
+      const normalized = {
+        ...detail,
+        id: detail.id || detail._id,
+        assigneeId: detail.assigneeId ? {
+          ...detail.assigneeId,
+          id: detail.assigneeId.id || detail.assigneeId._id
+        } : null,
+        comments: (detail.comments || []).map((c: any) => ({
+          ...c,
+          id: c.id || c._id,
+          authorId: c.authorId ? {
+            ...c.authorId,
+            id: c.authorId.id || c.authorId._id
+          } : null
+        })),
+        attachments: (detail.attachments || []).map((a: any) => ({
+          ...a,
+          id: a.id || a._id,
+          uploadedBy: a.uploadedBy ? {
+            ...a.uploadedBy,
+            id: a.uploadedBy.id || a.uploadedBy._id
+          } : null
+        }))
+      };
+      
+      set({ currentTaskDetail: normalized });
+      return normalized;
     } catch (e: any) {
       set({ error: e.message });
       throw e;
@@ -299,7 +326,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   uploadTaskAttachment: async (taskId, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    const attachment = await api.post<any>(`/tasks/${taskId}/attachments`, formData);
+    const attachment = await api.upload<any>(`/tasks/${taskId}/attachments`, formData);
     return { ...attachment, id: attachment.id || attachment._id };
   },
 

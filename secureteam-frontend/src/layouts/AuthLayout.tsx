@@ -23,7 +23,7 @@ export const AuthLayout = () => {
           <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-indigo-500/20">
             S
           </div>
-          <span className="text-3xl font-bold text-slate-900 tracking-tight">SecureTeam</span>
+          <span className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">SecureTeam</span>
         </div>
         <Outlet />
       </div>

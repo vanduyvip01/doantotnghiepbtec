@@ -20,8 +20,10 @@ import {
   User as UserIcon
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
+import { useThemeStore } from '../store/useThemeStore';
 import { cn } from '../utils/cn';
 import { Button } from '../components/Button';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export const DashboardLayout = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -121,7 +123,8 @@ export const DashboardLayout = () => {
             </Link>
           ))}
 
-          <div className="pt-4 mt-4 border-t border-slate-900">
+          <div className="pt-4 mt-4 border-t border-slate-900 space-y-2">
+            <ThemeToggle isSidebarOpen={isSidebarOpen} />
             <button
               onClick={handleLogout}
               className={cn(
@@ -138,45 +141,45 @@ export const DashboardLayout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Navbar */}
-        <header className="h-16 bg-white/40 backdrop-blur-xl border-b border-white/20 flex items-center justify-between px-4 lg:px-8 z-40 sticky top-0 shadow-sm shadow-indigo-500/5">
+        <header className="h-16 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/40 flex items-center justify-between px-4 lg:px-8 z-40 sticky top-0 shadow-sm shadow-indigo-500/5 dark:shadow-slate-900/20">
           <div className="flex items-center space-x-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 lg:hidden"
+              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 lg:hidden"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="hidden md:flex items-center bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 w-64 lg:w-96 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500/40 transition-all">
-              <Search className="w-4 h-4 text-slate-400 mr-2" />
+            <div className="hidden md:flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-xl px-3 py-1.5 w-64 lg:w-96 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500/40 transition-all">
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2" />
               <input 
                 type="text" 
                 placeholder="Search projects, tasks, people..." 
-                className="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-slate-400"
+                className="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-100"
               />
             </div>
           </div>
 
           <div className="flex items-center space-x-2 lg:space-x-4">
-            <button className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 relative transition-colors">
+            <button className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 relative transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900"></span>
             </button>
             
             <div className="relative">
               <button 
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center space-x-2 p-1.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all"
+                className="flex items-center space-x-2 p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all"
               >
                 <img 
                   src={user.avatar} 
                   alt={user.name} 
-                  className="w-8 h-8 rounded-full border border-slate-200 shadow-sm"
+                  className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm"
                 />
                 <div className="hidden lg:block text-left">
-                  <p className="text-sm font-bold text-slate-900 leading-none">{user.name}</p>
-                  <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-bold">{user.role}</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none">{user.name}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest font-bold">{user.role}</p>
                 </div>
-                <ChevronDown className="w-4 h-4 text-slate-400 hidden lg:block" />
+                <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 hidden lg:block" />
               </button>
 
               {isUserMenuOpen && (
@@ -185,13 +188,13 @@ export const DashboardLayout = () => {
                     className="fixed inset-0 z-10" 
                     onClick={() => setIsUserMenuOpen(false)}
                   ></div>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-20">
-                    <Link to="/profile" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Your Profile</Link>
-                    <Link to="/settings" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Settings</Link>
-                    <div className="border-t border-slate-100 my-1"></div>
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700 py-1 z-20">
+                    <Link to="/profile" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">Your Profile</Link>
+                    <Link to="/settings" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">Settings</Link>
+                    <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
                     <button 
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
+                      className="block w-full text-left px-4 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10"
                     >
                       Logout
                     </button>
@@ -203,7 +206,7 @@ export const DashboardLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-transparent dark:bg-slate-950/30">
           <Outlet />
         </main>
       </div>

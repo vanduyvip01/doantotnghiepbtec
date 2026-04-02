@@ -178,7 +178,32 @@ router.get('/:id', protect, async (req, res) => {
     
     // Permission check
     const user = await User.findById(req.user.id).select('department role');
-    if (user.role !== 'ADMIN' && user.role !== 'PM' && task.assigneeId?.toString() !== req.user.id) {
+    
+    // ADMIN can see all tasks
+    if (user.role === 'ADMIN') {
+      // Allow
+    }
+    // PM can see tasks in their department
+    else if (user.role === 'PM' && task.departmentId?.toString() === user.department?.toString()) {
+      // Allow
+    }
+    // MEMBER can see if:
+    // 1. Assigned to them
+    // 2. In a project they're a member of
+    else if (user.role === 'MEMBER') {
+      const { Project } = require('../models');
+      const isAssignee = task.assigneeId?.toString() === req.user.id;
+      
+      let isProjectMember = false;
+      if (task.projectId) {
+        const project = await Project.findById(task.projectId);
+        isProjectMember = project && project.members && project.members.some(m => m.toString() === req.user.id);
+      }
+      
+      if (!isAssignee && !isProjectMember) {
+        return res.status(403).json({ message: 'No permission to view this task' });
+      }
+    } else {
       return res.status(403).json({ message: 'No permission to view this task' });
     }
     
@@ -194,7 +219,20 @@ router.get('/:id', protect, async (req, res) => {
       .sort({ createdAt: -1 });
     
     const obj = task.toObject();
-    res.json({ ...obj, id: task._id, comments, attachments });
+    
+    // ✅ Normalize IDs in response
+    const normalizedAssigneeId = obj.assigneeId ? {
+      ...obj.assigneeId,
+      id: obj.assigneeId.id || obj.assigneeId._id
+    } : null;
+    
+    res.json({ 
+      ...obj, 
+      id: task._id, 
+      assigneeId: normalizedAssigneeId,
+      comments, 
+      attachments 
+    });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

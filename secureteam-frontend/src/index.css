@@ -15,6 +15,13 @@
   --card-shadow-hover: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
 
+:root.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --card-shadow-hover: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--background);
@@ -41,10 +48,28 @@ body {
   animation: mesh-animation 15s ease infinite;
 }
 
+:root.dark .bg-mesh {
+  background-color: #0f172a;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%);
+  background-attachment: fixed;
+  background-size: 200% 200%;
+  animation: mesh-animation 15s ease infinite;
+}
+
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+:root.dark .glass-card {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(71, 85, 105, 0.3);
 }
 
 /* Custom scrollbar for a cleaner look */
@@ -64,4 +89,13 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #cbd5e1;
+}
+
+:root.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
+}
+
+:root.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }

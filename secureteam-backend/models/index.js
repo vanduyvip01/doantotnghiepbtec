@@ -130,15 +130,56 @@ const channelSchema = new Schema({
   isPrivate: { type: Boolean, default: false },
 }, { timestamps: true });
 
-// ── MESSAGE ───────────────────────────────
+// ── MESSAGE v2 (v2 RichMedia Features) ─────
 const messageSchema = new Schema({
-  senderId:   { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  receiverId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
-  channelId:  { type: Schema.Types.ObjectId, ref: 'Channel', default: null },
-  text:       { type: String, required: true },
-  reactions:  [{ emoji: String, users: [{ type: Schema.Types.ObjectId, ref: 'User' }] }],
-  isDeleted:  { type: Boolean, default: false },
-  editedAt:   { type: Date, default: null },
+  senderId:    { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  receiverId:  { type: Schema.Types.ObjectId, ref: 'User', default: null },
+  channelId:   { type: Schema.Types.ObjectId, ref: 'Channel', default: null },
+  
+  text:        { type: String, default: '' },
+  
+  // ── Attachments (multiple files) ──
+  attachments: [{
+    type:       { type: String, enum: ['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT'], required: true },
+    url:        { type: String, required: true },
+    name:       { type: String, required: true },
+    size:       { type: Number, required: true },
+    mimeType:   { type: String, default: null },
+    width:      { type: Number, default: null },    // for IMAGE/VIDEO
+    height:     { type: Number, default: null },    // for IMAGE/VIDEO
+    duration:   { type: Number, default: null },    // for VIDEO/AUDIO (seconds)
+    thumbnail:  { type: String, default: null },    // for VIDEO
+  }],
+  
+  // ── Reply/Thread ──
+  replyTo: {
+    messageId:  { type: Schema.Types.ObjectId, ref: 'Message', default: null },
+    senderId:   { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    senderName: { type: String, default: null },
+    text:       { type: String, default: null },     // snapshot
+  },
+  
+  // ── Forward ──
+  forwardedFrom: {
+    messageId:  { type: Schema.Types.ObjectId, default: null },
+    senderId:   { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    senderName: { type: String, default: null },
+    channelId:  { type: Schema.Types.ObjectId, default: null },
+    receiverId: { type: Schema.Types.ObjectId, default: null },
+  },
+  
+  // ── Read Receipts ──
+  readBy: [{
+    userId:  { type: Schema.Types.ObjectId, ref: 'User' },
+    readAt:  { type: Date, default: Date.now },
+  }],
+  
+  // ── Reactions ──
+  reactions:   [{ emoji: String, users: [{ type: Schema.Types.ObjectId, ref: 'User' }] }],
+  
+  // ── Delete & Edit ──
+  isDeleted:   { type: Boolean, default: false },
+  editedAt:    { type: Date, default: null },
 }, { timestamps: true });
 
 module.exports = {

@@ -105,11 +105,12 @@ export const TaskPage = () => {
   // ── TASK DETAIL MODAL ────────────────────────
   const handleOpenTaskDetail = async (task: any) => {
     setSelectedTask(task);
-    setIsDetailModalOpen(true);
     try {
       await fetchTaskDetail(task.id);
+      setIsDetailModalOpen(true);
     } catch (e: any) {
       console.error('Error fetching task detail:', e);
+      setError('Failed to load task details');
     }
   };
 
@@ -479,7 +480,14 @@ export const TaskPage = () => {
 
       {/* ═══════════════════════════════════════════ TASK DETAIL MODAL */}
       <Modal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} title={selectedTask?.title}>
-        {currentTaskDetail && (
+        {!currentTaskDetail ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <Clock className="w-8 h-8 text-indigo-600 mx-auto mb-2 animate-spin" />
+              <p className="text-sm text-slate-600">Loading task details...</p>
+            </div>
+          </div>
+        ) : (
           <div className="space-y-6 max-h-96 overflow-y-auto">
             {/* Task Info */}
             <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-lg">
@@ -528,7 +536,7 @@ export const TaskPage = () => {
                       <button onClick={() => { const link = document.createElement('a'); link.href = att.fileUrl; link.download = att.fileName; link.click(); }} className="p-1 text-blue-500 hover:bg-blue-100 rounded">
                         <Download className="w-3 h-3" />
                       </button>
-                      {(user?.id === att.uploadedBy?.id || canManage) && (
+                      {(user?.id === (typeof att.uploadedBy === 'object' ? att.uploadedBy?.id || att.uploadedBy?._id : att.uploadedBy) || canManage) && (
                         <button onClick={() => handleDeleteAttachment(att.id)} className="p-1 text-red-500 hover:bg-red-100 rounded">
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -539,7 +547,7 @@ export const TaskPage = () => {
               </div>
 
               {/* Upload Attachment */}
-              {(user?.id === currentTaskDetail.assigneeId?.id || canManage) && (
+              {(user?.id === getAssigneeId(currentTaskDetail.assigneeId) || user?.role === 'ADMIN' || user?.role === 'PM') && (
                 <div className="flex gap-2 mb-4">
                   <input type="file" onChange={(e) => setFileInput(e.target.files?.[0] || null)} className="flex-1 text-sm" />
                   <Button size="sm" onClick={handleUploadAttachment} disabled={!fileInput || isLoading}>Upload</Button>

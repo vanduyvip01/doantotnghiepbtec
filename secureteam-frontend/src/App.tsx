@@ -15,6 +15,8 @@ import { ChatPage } from './pages/ChatPage';
 import { SecurityLogPage } from './pages/SecurityLogPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { useAuthStore } from './store/useAuthStore';
+import { useThemeStore } from './store/useThemeStore';
+import { ThemeProvider } from './components/ThemeProvider';
 
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -58,33 +60,35 @@ export default function App() {
   console.log('🔍 App.tsx render - isAuthenticated:', isAuthenticated, 'is2FARequired:', is2FARequired);
 
   return (
-    <Router>
-      <Routes>
-        {/* Auth Routes */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/2fa" element={<TwoFactorPage />} />
-        </Route>
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          {/* Auth Routes */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/2fa" element={<TwoFactorPage />} />
+          </Route>
 
-        {/* Dashboard Routes */}
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/employees" element={<EmployeePage />} />
-          <Route path="/departments" element={<DepartmentPage />} />
-          <Route path="/projects" element={<ProjectPage />} />
-          <Route path="/tasks" element={<TaskPage />} />
-          <Route path="/documents" element={<DocumentPage />} />
-          <Route path="/attendance" element={<AttendancePage />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/security-logs" element={<SecurityLogPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<ProfilePage />} /> {/* Reusing profile for demo */}
-        </Route>
+          {/* Dashboard Routes */}
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/employees" element={<EmployeePage />} />
+            <Route path="/departments" element={<DepartmentPage />} />
+            <Route path="/projects" element={<ProjectPage />} />
+            <Route path="/tasks" element={<TaskPage />} />
+            <Route path="/documents" element={<DocumentPage />} />
+            <Route path="/attendance" element={<AttendancePage />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/security-logs" element={<SecurityLogPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<ProfilePage />} /> {/* Reusing profile for demo */}
+          </Route>
 
-        {/* Fallback */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Router>
+          {/* Fallback */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
