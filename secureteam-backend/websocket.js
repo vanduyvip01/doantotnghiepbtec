@@ -1,10 +1,34 @@
-const { Message, Channel, User } = require('./models');
+const { Message, Channel, User, Notification } = require('./models');
 
 // Track online users: { userId: socketId }
 const onlineUsers = new Map();
 
 // Track user socket connections: { socketId: userId }
 const userSockets = new Map();
+
+// Helper function to create and emit notifications
+const createNotification = async (io, recipientId, type, title, message, relatedData = {}) => {
+  try {
+    const notification = await Notification.create({
+      recipientId,
+      type,
+      title,
+      message,
+      relatedData,
+      isRead: false
+    });
+    
+    // Emit to recipient's personal room
+    io.to(`user:${recipientId}`).emit('notification:new', {
+      ...notification.toObject(),
+      id: notification._id.toString()
+    });
+    
+    console.log(`📬 Notification created for user ${recipientId}: ${title}`);
+  } catch (err) {
+    console.error('❌ Error creating notification:', err.message);
+  }
+};
 
 const initWebSocket = (io) => {
   // Log any server errors
@@ -84,6 +108,20 @@ const initWebSocket = (io) => {
           isDeleted: false
         });
         
+        // Create notifications for other channel members (not the sender)
+        const channel = await Channel.findById(channelId).populate('members');
+        if (channel && channel.members) {
+          for (const member of channel.members) {
+            if (member._id.toString() !== senderId.toString()) {
+              await createNotification(io, member._id.toString(), 'MESSAGE',
+                `New message from ${senderName} in #${channel.name}`,
+                text.substring(0, 100),
+                { senderId, senderName, channelId, channelName: channel.name, messageId: message._id.toString() }
+              );
+            }
+          }
+        }
+        
       } catch (err) {
         console.error('❌ message:send error:', err.message);
         socket.emit('error', { message: 'Failed to send message' });
@@ -141,6 +179,13 @@ const initWebSocket = (io) => {
           createdAt: message.createdAt,
           isDeleted: false
         };
+        
+        // Create notification for receiver
+        await createNotification(io, receiverId, 'MESSAGE', 
+          `New message from ${senderName}`,
+          text.substring(0, 100),
+          { senderId, senderName, messageId: message._id.toString() }
+        );
         
         // Send to receiver if online
         if (receiverSocketId) {
@@ -427,6 +472,127 @@ const initWebSocket = (io) => {
         }
       } catch (err) {
         console.error('❌ message:forward error:', err.message);
+      }
+    });
+
+    // ══════ E2E ENCRYPTED MESSAGES ══════
+    
+    // Encrypted channel message
+    socket.on('message:send:encrypted', async (data) => {
+      try {
+        const { channelId, encryptedText, nonce, senderId } = data;
+        
+        console.log(`🔐 [E2E] Encrypted message in channel ${channelId}`);
+        
+        // Get channel members
+        const channel = await Channel.findById(channelId);
+        if (!channel) {
+          socket.emit('error', { message: 'Channel not found' });
+          return;
+        }
+        
+        // Save encrypted message
+        const message = await Message.create({
+          channelId,
+          senderId,
+          isEncrypted: true,
+          encryptedText,
+          encryptedFor: channel.members.map(memberId => ({
+            userId: memberId,
+            nonce
+          })),
+          text: '[Encrypted Message]',
+          readBy: [{ userId: senderId, readAt: new Date() }]
+        });
+        
+        await message.populate('senderId', 'name avatar publicKey');
+        
+        const senderObj = message.senderId;
+        
+        // Broadcast to channel
+        io.to(`channel:${channelId}`).emit('message:receive:encrypted', {
+          _id: message._id,
+          id: message._id,
+          channelId,
+          senderId: senderId.toString(),
+          senderName: senderObj?.name || 'Unknown',
+          senderAvatar: senderObj?.avatar || '',
+          senderPublicKey: senderObj?.publicKey, // For decryption
+          encryptedText,
+          nonce,
+          isEncrypted: true,
+          createdAt: message.createdAt
+        });
+        
+        console.log(`✅ [E2E] Encrypted message broadcast to channel`);
+      } catch (err) {
+        console.error('❌ message:send:encrypted error:', err.message);
+        socket.emit('error', { message: 'Failed to send encrypted message' });
+      }
+    });
+
+    // Encrypted DM
+    socket.on('dm:send:encrypted', async (data) => {
+      try {
+        const { receiverId, encryptedText, nonce, senderId } = data;
+        
+        console.log(`🔐 [E2E] Encrypted DM from ${senderId} to ${receiverId}`);
+        
+        if (!senderId || !receiverId || !encryptedText || !nonce) {
+          socket.emit('error', { message: 'Invalid encrypted DM data' });
+          return;
+        }
+        
+        // Save encrypted DM
+        const message = await Message.create({
+          senderId,
+          receiverId,
+          isEncrypted: true,
+          encryptedText,
+          encryptedFor: [{
+            userId: receiverId,
+            nonce
+          }],
+          text: '[Encrypted Message]',
+          readBy: [{ userId: senderId, readAt: new Date() }]
+        });
+        
+        await message.populate('senderId', 'name avatar publicKey');
+        
+        const senderObj = message.senderId;
+        
+        const dmData = {
+          _id: message._id,
+          id: message._id,
+          senderId: senderId.toString(),
+          receiverId,
+          senderName: senderObj?.name || 'Unknown',
+          senderAvatar: senderObj?.avatar || '',
+          senderPublicKey: senderObj?.publicKey, // For decryption
+          encryptedText,
+          nonce,
+          isEncrypted: true,
+          createdAt: message.createdAt
+        };
+        
+        // Get receiver's socket
+        const receiverSocketId = onlineUsers.get(receiverId);
+        
+        // Send to receiver if online
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit('dm:receive:encrypted', dmData);
+          console.log(`📤 [E2E] Encrypted DM sent to receiver`);
+        } else {
+          console.log(`⚪ [E2E] Receiver is offline, message saved in DB`);
+        }
+        
+        // Confirm to sender
+        socket.emit('dm:sent:encrypted', dmData);
+        
+        console.log(`✅ [E2E] Encrypted DM saved`);
+      } catch (err) {
+        console.error('❌ dm:send:encrypted error:', err.message);
+        socket.emit('error', { message: 'Failed to send encrypted DM' });
       }
     });
 

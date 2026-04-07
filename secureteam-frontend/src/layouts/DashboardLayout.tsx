@@ -21,16 +21,55 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useThemeStore } from '../store/useThemeStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 import { cn } from '../utils/cn';
 import { Button } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { NotificationPanel } from '../components/NotificationPanel';
+import io from 'socket.io-client';
 
 export const DashboardLayout = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { unreadCount, addNotification, fetchUnreadCount } = useNotificationStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Set up WebSocket listener for real-time notifications
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const socket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000');
+    
+    socket.on('connect', () => {
+      console.log('✅ Connected to WebSocket');
+      socket.emit('user:join', { userId: user.id, userName: user.name });
+    });
+
+    socket.on('notification:new', (notification) => {
+      console.log('📬 New notification received:', notification);
+      addNotification(notification);
+      // Also update unread count
+      fetchUnreadCount();
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ Disconnected from WebSocket');
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?.id, user?.name, addNotification, fetchUnreadCount]);
+
+  // Fetch initial unread count
+  useEffect(() => {
+    if (user?.id) {
+      fetchUnreadCount();
+    }
+  }, [user?.id, fetchUnreadCount]);
 
   useEffect(() => {
     console.log(`📊 DashboardLayout at ${location.pathname}, isAuthenticated: ${isAuthenticated}, user: ${user?.name}`);
@@ -160,9 +199,17 @@ export const DashboardLayout = () => {
           </div>
 
           <div className="flex items-center space-x-2 lg:space-x-4">
-            <button className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 relative transition-colors">
+            <button 
+              onClick={() => setIsNotificationPanelOpen(!isNotificationPanelOpen)}
+              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 relative transition-colors"
+              title="Notifications"
+            >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900 text-white text-xs flex items-center justify-center font-bold">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </button>
             
             <div className="relative">
@@ -210,6 +257,9 @@ export const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Notification Panel */}
+      <NotificationPanel isOpen={isNotificationPanelOpen} onClose={() => setIsNotificationPanelOpen(false)} />
     </div>
   );
 };

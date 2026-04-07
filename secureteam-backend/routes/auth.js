@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
-const { User, SecurityLog } = require('../models');
+const { User, SecurityLog, Notification } = require('../models');
 const { protect } = require('../middleware/auth');
 
 const signToken = (user) =>
@@ -319,6 +319,20 @@ router.post('/login', async (req, res) => {
     if (!user) {
       console.log(`❌ User not found: ${email}`);
       await SecurityLog.create({ userId: null, userName: email, action: 'Login', ipAddress: ip, device, status: 'FAILED', meta: { reason: 'User not found' } });
+      
+      // Create notification for all admins about failed login
+      const admins = await User.find({ role: 'ADMIN' });
+      for (const admin of admins) {
+        await Notification.create({
+          recipientId: admin._id,
+          type: 'LOGIN_FAILED',
+          title: '❌ Failed Login Attempt',
+          message: `Failed login attempt for email: ${email}`,
+          relatedData: { email, ip, device, reason: 'User not found' },
+          isRead: false
+        });
+      }
+      
       return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
@@ -329,6 +343,20 @@ router.post('/login', async (req, res) => {
     if (!isPasswordValid) {
       console.log(`❌ Password mismatch for ${email}`);
       await SecurityLog.create({ userId: user?._id || null, userName: email, action: 'Login', ipAddress: ip, device, status: 'FAILED', meta: { reason: 'Invalid password' } });
+      
+      // Create notification for all admins about failed login
+      const admins = await User.find({ role: 'ADMIN' });
+      for (const admin of admins) {
+        await Notification.create({
+          recipientId: admin._id,
+          type: 'LOGIN_FAILED',
+          title: '❌ Failed Login Attempt',
+          message: `Failed login attempt for: ${user.name}`,
+          relatedData: { userId: user._id, email, ip, device, reason: 'Invalid password' },
+          isRead: false
+        });
+      }
+      
       return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
@@ -458,6 +486,20 @@ router.post('/verify-2fa', async (req, res) => {
           validCodes: codes.map(c => c.code)
         } 
       });
+      
+      // Create notification for all admins about failed 2FA
+      const admins = await User.find({ role: 'ADMIN' });
+      for (const admin of admins) {
+        await Notification.create({
+          recipientId: admin._id,
+          type: 'LOGIN_FAILED',
+          title: '❌ Failed 2FA Verification',
+          message: `Failed 2FA verification attempt for: ${user.name}`,
+          relatedData: { userId: user._id, email: user.email, ip, device, reason: 'Invalid TOTP code' },
+          isRead: false
+        });
+      }
+      
       return res.status(401).json({ 
         message: 'Mã xác thực không đúng hoặc đã hết hạn (hết cách > 2 phút). Kiểm tra thời gian điện thoại và thử lại ngay lập tức.',
         debug: {

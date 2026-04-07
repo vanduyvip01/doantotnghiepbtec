@@ -46,6 +46,7 @@ app.use('/api/attendance',  require('./routes/attendance'));
 app.use('/api/security',    require('./routes/security'));
 app.use('/api/chat',        require('./routes/chat'));
 app.use('/api/dashboard',   require('./routes/dashboard'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));

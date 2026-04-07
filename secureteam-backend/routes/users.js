@@ -333,4 +333,123 @@ router.post('/:id/enable-2fa', protect, authorize('ADMIN'), async (req, res) => 
   }
 });
 
+// ── E2E ENCRYPTION ENDPOINTS ──────────────────────────────────
+
+// POST /api/users/current/encryption-keys/generate
+// Generate new encryption keypair (client-initiated, to avoid server knowing private keys)
+// Returns public key to store on server + private key to store client-side
+router.post('/current/encryption-keys/generate', protect, async (req, res) => {
+  try {
+    const EncryptionService = require('../utils/encryption');
+    
+    console.log(`\n🔐 [E2E] Generating keypair for user: ${req.user.id}`);
+    
+    const { publicKey: publicKeyB64, privateKey: privateKeyB64 } = EncryptionService.generateKeyPair();
+    
+    console.log(`✅ [E2E] Keypair generated (public key length: ${publicKeyB64.length})`);
+    
+    // Return both keys - client will store private key locally and send public key to server
+    res.json({
+      message: 'Encryption keypair generated',
+      publicKey: publicKeyB64,
+      privateKey: privateKeyB64,
+      instructions: 'Store privateKey locally/securely. Send publicKey to server via POST /api/users/current/encryption-keys/set'
+    });
+  } catch (err) {
+    console.error(`❌ [E2E] Key generation error: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/users/current/encryption-keys/set
+// Store public key + encrypted private key on server
+// encryptedPrivateKey is encrypted by user's password
+router.post('/current/encryption-keys/set', protect, async (req, res) => {
+  try {
+    const { publicKey, encryptedPrivateKey } = req.body;
+    const EncryptionService = require('../utils/encryption');
+    
+    if (!publicKey || !encryptedPrivateKey) {
+      return res.status(400).json({ message: 'publicKey and encryptedPrivateKey are required' });
+    }
+    
+    console.log(`\n🔐 [E2E] Storing encryption keys for user: ${req.user.id}`);
+    
+    // Verify public key format (should be base64, 44 chars for Curve25519)
+    if (publicKey.length !== 44) {
+      return res.status(400).json({ message: 'Invalid public key format' });
+    }
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        publicKey,
+        encryptedPrivateKey,
+        keysGeneratedAt: new Date()
+      },
+      { new: true }
+    ).select('-passwordHash -twoFactorSecret -encryptedPrivateKey');
+    
+    console.log(`✅ [E2E] Encryption keys stored for ${user.email}`);
+    
+    res.json({
+      message: 'Encryption keys stored successfully',
+      userId: user._id,
+      publicKeyLength: publicKey.length,
+      keysGeneratedAt: user.keysGeneratedAt
+    });
+  } catch (err) {
+    console.error(`❌ [E2E] Set keys error: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/users/:id/public-key
+// Get user's public key for encryption (anyone can call this)
+router.get('/:id/public-key', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('publicKey keysGeneratedAt');
+    
+    if (!user || !user.publicKey) {
+      return res.status(404).json({ 
+        message: 'User not found or encryption keys not set up',
+        hasEncryption: false
+      });
+    }
+    
+    console.log(`✅ [E2E] Retrieved public key for user: ${req.params.id}`);
+    
+    res.json({
+      userId: user._id,
+      publicKey: user.publicKey,
+      keysGeneratedAt: user.keysGeneratedAt,
+      hasEncryption: true
+    });
+  } catch (err) {
+    console.error(`❌ [E2E] Get public key error: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/users/current/encryption-keys/verify
+// Verify if current user's encryption keys are set up
+router.get('/current/encryption-keys/verify', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('publicKey encryptedPrivateKey keysGeneratedAt');
+    
+    const hasEncryption = !!(user.publicKey && user.encryptedPrivateKey);
+    
+    console.log(`✅ [E2E] Verified encryption status for ${req.user.id}: ${hasEncryption}`);
+    
+    res.json({
+      hasEncryption,
+      keysGeneratedAt: user.keysGeneratedAt,
+      message: hasEncryption ? 'Encryption keys are set up' : 'Encryption keys not set up'
+    });
+  } catch (err) {
+    console.error(`❌ [E2E] Verify keys error: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

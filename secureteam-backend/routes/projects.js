@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { Project, Task } = require('../models');
+const { Project, Task, Notification } = require('../models');
 const { protect, authorize } = require('../middleware/auth');
 
 router.get('/', protect, async (req, res) => {
@@ -100,6 +100,11 @@ router.put('/:id', protect, async (req, res) => {
       req.body = allowedFields;
     }
     
+    // Track new members being added
+    const oldMembers = project.members.map(m => m.toString());
+    const newMembers = req.body.members || [];
+    const addedMembers = newMembers.filter(memberId => !oldMembers.includes(memberId.toString()));
+    
     const updated = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true })
       .populate('managerId', 'name avatar')
       .populate({
@@ -109,6 +114,20 @@ router.put('/:id', protect, async (req, res) => {
       })
       .populate('departmentId', 'name');
     if (!updated) return res.status(404).json({ message: 'Không tìm thấy dự án' });
+    
+    // Create notifications for newly added members
+    for (const memberId of addedMembers) {
+      await Notification.create({
+        recipientId: memberId,
+        type: 'PROJECT_ASSIGNED',
+        title: '📌 New Project Assigned',
+        message: `You have been added to project: ${updated.name}`,
+        relatedData: { projectId: updated._id.toString(), projectName: updated.name },
+        isRead: false,
+        actionUrl: `/projects/${updated._id}`
+      });
+    }
+    
     const obj = updated.toObject();
     res.json({ ...obj, id: updated._id });
   } catch (err) { res.status(500).json({ message: err.message }); }

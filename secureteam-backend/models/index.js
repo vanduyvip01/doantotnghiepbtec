@@ -18,6 +18,10 @@ const userSchema = new Schema({
   lastLogin:        { type: Date, default: null },
   lastIpAddress:    { type: String, default: null },
   lastDevice:       { type: String, default: null },
+  // ── E2E Encryption ──
+  publicKey:        { type: String, default: null },        // Công khoá công khai
+  encryptedPrivateKey: { type: String, default: null },     // Private key mã hoá (base64)
+  keysGeneratedAt:  { type: Date, default: null },
 }, { timestamps: true });
 
 // ── DEPARTMENT ────────────────────────────
@@ -130,6 +134,24 @@ const channelSchema = new Schema({
   isPrivate: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// ── NOTIFICATION ──────────────────────────
+const notificationSchema = new Schema({
+  recipientId: { type: Schema.Types.ObjectId, ref: 'User', required: true },  // User nhận thông báo
+  type:        { type: String, enum: ['MESSAGE', 'PROJECT_ASSIGNED', 'LOGIN_FAILED', 'SYSTEM'], required: true },
+  title:       { type: String, required: true },
+  message:     { type: String, required: true },
+  isRead:      { type: Boolean, default: false },
+  readAt:      { type: Date, default: null },
+  // Metadata for different notification types
+  relatedId:   { type: Schema.Types.ObjectId, default: null },  // messageId, projectId, userId, etc.
+  relatedType: { type: String, default: null },                 // 'MESSAGE', 'PROJECT', 'USER', etc.
+  relatedData: { type: Schema.Types.Mixed, default: {} },       // Extra info (e.g., username, failed IP)
+  actionUrl:   { type: String, default: null },                 // Link to navigate to
+}, { timestamps: true });
+
+notificationSchema.index({ recipientId: 1, createdAt: -1 });
+notificationSchema.index({ recipientId: 1, isRead: 1 });
+
 // ── MESSAGE v2 (v2 RichMedia Features) ─────
 const messageSchema = new Schema({
   senderId:    { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -137,6 +159,14 @@ const messageSchema = new Schema({
   channelId:   { type: Schema.Types.ObjectId, ref: 'Channel', default: null },
   
   text:        { type: String, default: '' },
+  
+  // ── E2E Encryption ──
+  isEncrypted: { type: Boolean, default: false },          // Có mã hoá không
+  encryptedText: { type: String, default: null },          // Tin nhắn mã hoá (base64)
+  encryptedFor: [{                                          // Ai có thể decrypt
+    userId:    { type: Schema.Types.ObjectId, ref: 'User' },
+    nonce:     { type: String }                            // Unique nonce per recipient
+  }],
   
   // ── Attachments (multiple files) ──
   attachments: [{
@@ -149,6 +179,7 @@ const messageSchema = new Schema({
     height:     { type: Number, default: null },    // for IMAGE/VIDEO
     duration:   { type: Number, default: null },    // for VIDEO/AUDIO (seconds)
     thumbnail:  { type: String, default: null },    // for VIDEO
+    isEncrypted: { type: Boolean, default: false }, // Attachment mã hoá
   }],
   
   // ── Reply/Thread ──
@@ -194,4 +225,5 @@ module.exports = {
   SecurityLog: mongoose.model('SecurityLog', securityLogSchema),
   Channel:     mongoose.model('Channel', channelSchema),
   Message:     mongoose.model('Message', messageSchema),
+  Notification: mongoose.model('Notification', notificationSchema),
 };

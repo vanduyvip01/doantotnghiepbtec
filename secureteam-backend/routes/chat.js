@@ -580,4 +580,159 @@ router.post('/channels/:channelId/join', protect, async (req, res) => {
   }
 });
 
+// ── E2E ENCRYPTED MESSAGE ENDPOINTS ────────────────────────────
+
+// POST /dm/:userId/encrypted - Gửi DM mã hoá
+// Body: { encryptedText, nonce }
+router.post('/dm/:userId/encrypted', protect, async (req, res) => {
+  try {
+    const { encryptedText, nonce } = req.body;
+    const receiverId = req.params.userId;
+    
+    if (!encryptedText || !nonce) {
+      return res.status(400).json({ message: 'encryptedText and nonce are required' });
+    }
+    
+    console.log(`\n🔐 [E2E] Sending encrypted DM to ${receiverId}`);
+    
+    const msg = await Message.create({
+      senderId: req.user.id,
+      receiverId,
+      isEncrypted: true,
+      encryptedText,
+      encryptedFor: [{
+        userId: receiverId,
+        nonce: nonce
+      }],
+      text: '[Encrypted Message]' // Placeholder
+    });
+    
+    await msg.populate('senderId', 'name avatar');
+    
+    console.log(`✅ [E2E] Encrypted DM sent: ${msg._id}`);
+    
+    res.status(201).json({
+      ...msg.toObject(),
+      message: 'Encrypted message sent'
+    });
+  } catch (err) {
+    console.error(`❌ [E2E] Send encrypted DM error: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /channels/:channelId/messages/encrypted - Gửi tin nhắn channel mã hoá
+// Body: { encryptedText, nonce }
+// For channels: all members can decrypt using own private key + sender's public key
+router.post('/channels/:channelId/messages/encrypted', protect, async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const { encryptedText, nonce } = req.body;
+    
+    if (!encryptedText || !nonce) {
+      return res.status(400).json({ message: 'encryptedText and nonce are required' });
+    }
+    
+    if (!channelId || channelId === 'undefined') {
+      return res.status(400).json({ message: 'Channel ID is required' });
+    }
+    
+    console.log(`\n🔐 [E2E] Sending encrypted message to channel ${channelId}`);
+    
+    // Get channel to know all members
+    const channel = await Channel.findById(channelId);
+    if (!channel) {
+      return res.status(404).json({ message: 'Channel not found' });
+    }
+    
+    // Create encrypted message for all channel members
+    const encryptedFor = channel.members.map(memberId => ({
+      userId: memberId,
+      nonce: nonce // Same nonce for all (since it's box, not secretbox)
+    }));
+    
+    const msg = await Message.create({
+      senderId: req.user.id,
+      channelId,
+      isEncrypted: true,
+      encryptedText,
+      encryptedFor,
+      text: '[Encrypted Message]' // Placeholder
+    });
+    
+    await msg.populate('senderId', 'name avatar');
+    
+    console.log(`✅ [E2E] Encrypted channel message sent: ${msg._id} to ${channel.members.length} members`);
+    
+    res.status(201).json({
+      ...msg.toObject(),
+      message: 'Encrypted message sent to channel'
+    });
+  } catch (err) {
+    console.error(`❌ [E2E] Send encrypted message error: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /dm/:userId/encrypted - Lấy DM mã hoá (với decryption hints)
+router.get('/dm/:userId/encrypted', protect, async (req, res) => {
+  try {
+    const messages = await Message.find({
+      isEncrypted: true,
+      $or: [
+        { senderId: req.user.id, receiverId: req.params.userId },
+        { senderId: req.params.userId, receiverId: req.user.id },
+      ],
+      isDeleted: false,
+    })
+      .populate('senderId', 'name avatar publicKey')
+      .sort({ createdAt: 1 })
+      .limit(100);
+    
+    console.log(`✅ [E2E] Retrieved ${messages.length} encrypted DMs`);
+    
+    res.json({
+      messages: messages.map(msg => ({
+        ...msg.toObject(),
+        senderPublicKey: msg.senderId?.publicKey // Include sender's public key for decryption
+      }))
+    });
+  } catch (err) {
+    console.error(`❌ [E2E] Get encrypted DM error: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /channels/:channelId/messages/encrypted - Lấy channel messages mã hoá
+router.get('/channels/:channelId/messages/encrypted', protect, async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    
+    if (!channelId || channelId === 'undefined') {
+      return res.status(400).json({ message: 'Channel ID is required' });
+    }
+    
+    const messages = await Message.find({
+      channelId,
+      isEncrypted: true,
+      isDeleted: false
+    })
+      .populate('senderId', 'name avatar publicKey')
+      .sort({ createdAt: 1 })
+      .limit(100);
+    
+    console.log(`✅ [E2E] Retrieved ${messages.length} encrypted messages from channel ${channelId}`);
+    
+    res.json({
+      messages: messages.map(msg => ({
+        ...msg.toObject(),
+        senderPublicKey: msg.senderId?.publicKey // Include sender's public key for decryption
+      }))
+    });
+  } catch (err) {
+    console.error(`❌ [E2E] Get encrypted messages error: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
