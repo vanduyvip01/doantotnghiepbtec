@@ -84,7 +84,7 @@ export const SecurityLogPage = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-500 font-mono">
-                      {log.timestamp ? new Date(log.timestamp).toLocaleString('vi-VN') : (log as any).createdAt ? new Date((log as any).createdAt).toLocaleString('vi-VN') : '—'}
+                      {log.timestamp ? new Date(log.timestamp).toLocaleString('en-US') : (log as any).createdAt ? new Date((log as any).createdAt).toLocaleString('en-US') : '—'}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600"><Globe className="inline w-3 h-3 mr-1.5 text-slate-400" />{log.ipAddress}</td>
                     <td className="px-6 py-4 text-sm text-slate-600"><Smartphone className="inline w-3 h-3 mr-1.5 text-slate-400" />{log.device}</td>

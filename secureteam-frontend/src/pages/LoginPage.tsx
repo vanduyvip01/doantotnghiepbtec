@@ -51,9 +51,7 @@ export const LoginPage = () => {
 
         <Button type="submit" className="w-full" isLoading={isLoading}>Sign in</Button>
 
-        <p className="text-xs text-center text-slate-400 pt-2">
-          Demo: admin@secureteam.com / SecurePass@123
-        </p>
+        
       </form>
     </Card>
   );

@@ -1,6 +1,6 @@
 /**
  * WebSocket Backend Test
- * Kiểm tra xem backend có nhận được socket events không
+ * Check if backend receives socket events or not
  */
 
 const io = require('socket.io-client');

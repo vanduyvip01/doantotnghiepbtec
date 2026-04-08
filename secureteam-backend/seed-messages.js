@@ -25,14 +25,14 @@ const seedMessages = async () => {
 
     // Sample messages for each channel
     const sampleMessages = [
-      'Xin chào các bạn! 👋',
+      'Hello everyone! 👋',
       'Hôm nay công việc thế nào?',
       'Ai hoàn thành task chưa?',
       'Meeting lúc 2h PM nhé',
       'Cập nhật tiến độ: 75% hoàn thành',
       'Tốt! Tiếp tục cố gắng',
-      '😊 Bạn làm tốt lắm',
-      'Cảm ơn các bạn đã hỗ trợ',
+      '😊 You did great job',
+      'Thank you all for supporting',
       'Deploy thành công 🎉',
       'Bug fix đã xong',
       'Review code tại PR #123',

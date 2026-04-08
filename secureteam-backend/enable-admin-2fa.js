@@ -50,7 +50,7 @@ const enable = async () => {
     );
     
     if (admin) {
-      console.log('\n✅ 2FA bật thành công cho admin@secureteam.com');
+      console.log('\n✅ 2FA enabled successfully for admin@secureteam.com');
       console.log('───────────────────────────────────────────');
       console.log('📱 2FA Secret Key (Base32):');
       console.log(`   ${secret.base32}`);
@@ -60,10 +60,10 @@ const enable = async () => {
       console.log(`   ${secret.otpauth_url}`);
       console.log('\n💾 QR Code (Data URL):');
       console.log(`   ${qrCode.substring(0, 100)}...`);
-      console.log('\n📋 Hướng dẫn:');
-      console.log('   1. Mở Google Authenticator hoặc app tương tự');
-      console.log('   2. Scan QR Code hoặc nhập manual entry key');
-      console.log('   3. Lưu lại secret key ở nơi an toàn');
+      console.log('\n📋 Instructions:');
+      console.log('   1. Open Google Authenticator or similar app');
+      console.log('   2. Scan QR Code or enter manual entry key');
+      console.log('   3. Save the secret key in a secure location');
       console.log('───────────────────────────────────────────\n');
     } else {
       console.log('❌ Admin user not found');

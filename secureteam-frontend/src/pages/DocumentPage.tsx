@@ -205,7 +205,7 @@ export const DocumentPage = () => {
                   <td className="px-6 py-4 text-sm text-slate-600">
                     {typeof doc.uploadedBy === 'object' ? doc.uploadedBy?.name : doc.uploadedBy}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{doc.uploadDate || new Date(doc.createdAt || '').toLocaleDateString('vi-VN')}</td>
+                  <td className="px-6 py-4 text-sm text-slate-500">{doc.uploadDate || new Date(doc.createdAt || '').toLocaleDateString('en-US')}</td>
                   <td className="px-6 py-4 text-sm text-slate-500">{(Number(doc.size) / 1024 / 1024).toFixed(2)} MB</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end space-x-2">

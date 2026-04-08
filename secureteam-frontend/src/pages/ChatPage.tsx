@@ -1056,7 +1056,7 @@ export const ChatPage = () => {
 
             <div className="p-4">
               <p className="text-sm text-slate-600 mb-4">
-                Chọn người dùng để thêm hoặc xóa khỏi kênh này:
+                Select users to add or remove from this channel:
               </p>
               
               <div className="space-y-2 max-h-96 overflow-y-auto">

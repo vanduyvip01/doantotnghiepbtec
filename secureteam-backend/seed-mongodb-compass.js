@@ -9,7 +9,7 @@
 // Chọn / tạo database
 use('secureteam');
 
-// Xóa collections cũ nếu có
+// Delete old collections if any
 db.users.drop();
 db.departments.drop();
 db.projects.drop();
@@ -46,8 +46,8 @@ print('✅ Departments: ' + db.departments.countDocuments() + ' records');
 
 // ─────────────────────────────────────────
 //  2. USERS
-//  PASSWORD HASH: bcrypt của "SecurePass@123" (cost 10)
-//  Hash này được tính lại từ bcryptjs
+//  PASSWORD HASH: bcrypt of "SecurePass@123" (cost 10)
+//  This hash is recalculated from bcryptjs
 // ─────────────────────────────────────────
 db.users.insertMany([
   {

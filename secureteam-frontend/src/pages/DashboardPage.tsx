@@ -81,7 +81,7 @@ export const DashboardPage = () => {
                   <p className="text-sm font-medium text-slate-900 truncate">{t.title}</p>
                   <p className="text-xs text-slate-500 mt-1 flex items-center">
                     <Calendar className="w-3 h-3 mr-1" />
-                    {t.deadline ? new Date(t.deadline).toLocaleDateString('vi-VN') : '—'}
+                    {t.deadline ? new Date(t.deadline).toLocaleDateString('en-US') : '—'}
                   </p>
                 </div>
                 <div className={cn('px-2 py-1 rounded text-[10px] font-bold uppercase',

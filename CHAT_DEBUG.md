@@ -1,7 +1,7 @@
 /**
  * Chat Debug Instructions
  * 
- * Mở browser DevTools (F12) và chạy các lệnh này để debug
+ * Open browser DevTools (F12) and run these commands to debug
  */
 
 console.log(`
@@ -9,50 +9,50 @@ console.log(`
   🔧 CHAT DEBUG SCRIPT
 ════════════════════════════════════════════════════════════
 
-Hãy copy & paste những dòng lệnh sau vào Browser Console (F12)
-để kiểm tra vấn đề:
+Copy & paste the following commands into Browser Console (F12)
+to check for issues:
 
-1️⃣  Kiểm tra xem user đã login chưa:
+1️⃣  Check if user is logged in:
 ────────────────────────────────────────────────────────────
 localStorage.getItem('token')
 localStorage.getItem('userId') 
 localStorage.getItem('userName')
 
-Nếu tất cả trả về null → Bạn chưa login
-Nếu có giá trị → User đã được lưu
+If all return null → You are not logged in
+If you have values → User is saved
 
-2️⃣  Kiểm tra Zustand store:
+2️⃣  Check Zustand store:
 ────────────────────────────────────────────────────────────
 useAuthStore.getState()
 useAppStore.getState()
 
-3️⃣  Kiểm tra WebSocket connection:
+3️⃣  Check WebSocket connection:
 ────────────────────────────────────────────────────────────
 useChatStore.getState()
 
-Sẽ hiển thị:
+Will display:
   - isConnected: true/false
   - channels: []
-  - activeChannel: string hoặc null
+  - activeChannel: string or null
   - messages: {...}
 
-4️⃣  Xem full chat store state:
+4️⃣  View full chat store state:
 ────────────────────────────────────────────────────────────
 console.log(useChatStore.getState())
 
-5️⃣  Kiểm tra Network errors:
+5️⃣  Check Network errors:
 ────────────────────────────────────────────────────────────
-- Mở DevTools → Tab "Network"
-- Action: Làm gì đó ở chat (gửi message, upload file)
-- Xem request gửi đi hay không
-- Nếu error (404, 500, 401) → Report lại
+- Open DevTools → "Network" Tab
+- Action: Do something in chat (send message, upload file)
+- Check if request is sent
+- If error (404, 500, 401) → Report back
 
 ════════════════════════════════════════════════════════════
 
-Nếu bạn không thể làm gì cả, hãy cung cấp output của:
-  a) localStorage check (bước 1)
-  b) useChatStore.getState() (bước 4)
-  c) Browser console errors (bước 5)
+If you cannot resolve it, please provide output from:
+  a) localStorage check (step 1)
+  b) useChatStore.getState() (step 4)
+  c) Browser console errors (step 5)
 
 ════════════════════════════════════════════════════════════
 `);
